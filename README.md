@@ -1,3 +1,3 @@
 # investing-manager
 
-START NEW PROJECT 
+START NEW PROJECT ls
