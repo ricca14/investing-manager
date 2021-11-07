@@ -64,7 +64,7 @@ for ticker in all_ticker:
         print('\n\nERRORE. {}\n\n'.format(ticker))
         all_ticker_error.append(ticker)
 
-time.sleep(60)
+time.sleep(30)
 
 for ticker in all_ticker_error:
     print('Processo {} ------> {}/{}'.format(ticker, i, len(all_ticker)))
