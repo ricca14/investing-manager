@@ -11,17 +11,17 @@ import math
 import time
 
 
-tickers_dow = si.tickers_dow()
+# tickers_dow = si.tickers_dow()
 # tickers_ftse100 = si.tickers_ftse100()
 # tickers_ftse250 = si.tickers_ftse250()
 # tickers_ibovespa = si.tickers_ibovespa()
 #tickers_nasdaq = si.tickers_nasdaq()
-tickers_nifty50 = si.tickers_nifty50()
+# tickers_nifty50 = si.tickers_nifty50()
 # tickers_niftybank = si.tickers_niftybank()
 # tickers_other = si.tickers_other()
 tickers_sp500 = si.tickers_sp500()
 
-all_ticker = tickers_dow + tickers_nifty50 + tickers_sp500
+all_ticker = tickers_sp500
 all_ticker = list(dict.fromkeys(all_ticker))
 
 all_ticker_error = []
@@ -38,33 +38,40 @@ def add_ticker(ticker):
     field_ebitda = None
     field_pe = None
     field_peg = None
+    field_trailing = None
     for n, field in ticker_dict[0].iteritems():
         if 'EBITDA' in field:
             field_ebitda = n
-        elif 'P/E' in field:
-            field_pe = n
+        elif 'Forward P/E' in field:
+            field_forward = n
         elif 'PEG' in field:
             field_peg = n
+        elif 'Trailing P/E' in field:
+            field_pe = n
 
-    ticker_element = {
-        'TICKER': ticker,
-        'EBITDA': float(0) if math.isnan(float(ticker_dict[1][field_ebitda])) else float(ticker_dict[1][field_ebitda]),
-        'PE': float(0) if math.isnan(float(ticker_dict[1][field_pe])) else float(ticker_dict[1][field_pe]),
-        'PEG': float(0) if math.isnan(float(ticker_dict[1][field_peg])) else float(ticker_dict[1][field_peg]),
-    }
-    all_ticker_data.append(ticker_element)
-    all_ticker_dict[ticker] = ticker_element
+    next_better = bool(field_forward > field_pe)
+    if next_better:
+        ticker_element = {
+            'TICKER': ticker,
+            'EBITDA': float(0) if math.isnan(float(ticker_dict[1][field_ebitda])) else float(ticker_dict[1][field_ebitda]),
+            'PE': float(999) if math.isnan(float(ticker_dict[1][field_pe])) else float(ticker_dict[1][field_pe]),
+            'PEG': float(999) if math.isnan(float(ticker_dict[1][field_peg])) else float(ticker_dict[1][field_peg]),
+            'PE_NEXT': next_better
+        }
+        all_ticker_data.append(ticker_element)
+        all_ticker_dict[ticker] = ticker_element
 
 for ticker in all_ticker:
     print('Processo {} ------> {}/{}'.format(ticker, i, len(all_ticker)))
     try:
         add_ticker(ticker)
         i = i+1
+        print("--- %s secondi dall'inizio ---" % (time.time() - start_time))
     except:
-        print('\n\nERRORE. {}\n\n'.format(ticker))
+        print("--- %s secondi dall'inizio ---" % (time.time() - start_time))
+        print('\n\nERRORE. {}\n'.format(ticker))
         all_ticker_error.append(ticker)
 
-time.sleep(30)
 
 for ticker in all_ticker_error:
     print('Processo {} ------> {}/{}'.format(ticker, i, len(all_ticker)))
@@ -72,7 +79,7 @@ for ticker in all_ticker_error:
         add_ticker(ticker)
         i = i+1
     except:
-        print('\n\nERRORE. {}\n\n'.format(ticker))
+        print('\n\nERRORE. {}\n'.format(ticker))
         all_ticker_error.append(ticker)
 
 
