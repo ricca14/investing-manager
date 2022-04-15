@@ -30,9 +30,12 @@ class DBIntelligent():
     def log_response(self, res, log_rage=False):
         # Metodo che logga cose in automatico
         if log_response or log_rage:
-            print("\nRESPONSE: ")
-            for x in res:
-                print('{}\n'.format(x))
+            if type(res) == int:
+                print("\nRESPONSE: {}".format(res))
+            else:
+                print("\nRESPONSE: ")
+                for x in res:
+                    print('{}\n'.format(x))
 
 
     def select(self, q, log_rage=False):
@@ -53,6 +56,7 @@ class DBIntelligent():
         fields = self.create_field_query(campi) if type(campi) == list else campi
         items = ''
         for i in val:
+            items += ', ' if items else items
             items += '%s '
 
         q = "INSERT INTO {tabella} ({campi}) VALUES ({items})".format(
@@ -65,6 +69,7 @@ class DBIntelligent():
         self.mydb.commit()
 
         response = self.cursor.rowcount
+        self.log_response(response, log_rage=log_rage)
         return self.cursor.rowcount
 
     def create_field_query(self, fields):
