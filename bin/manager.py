@@ -1,116 +1,80 @@
-# import investpy
-# df = investpy.get_stock_historical_data(stock='AAPL', country='United States', from_date='01/01/2010', to_date='01/01/2020')
-# print(df)
+import yfinance as yf
+import yfinance as yf
 
-import yahoo_fin.stock_info as si
-from yahoo_fin import options
-import pandas as pd
+msft = yf.Ticker("MSFT")
 
-from collections import OrderedDict
-import math
-import time
-from sql.config import cursor
+# get stock info
+print('=> {}\n'.format(msft.info))
 
-print(cursor)
+# get historical market data
+hist = msft.history(period="max")
+print('=> {}\n'.format(hist))
+# show actions (dividends, splits)
+print('=> {}\n'.format(msft.actions))
 
-tickers_dow = si.tickers_dow()
-# tickers_ftse100 = si.tickers_ftse100()
-# tickers_ftse250 = si.tickers_ftse250()
-# tickers_ibovespa = si.tickers_ibovespa()
-# tickers_nasdaq = si.tickers_nasdaq()
-# tickers_nifty50 = si.tickers_nifty50()
-# tickers_niftybank = si.tickers_niftybank()
-# tickers_other = si.tickers_other()
-# tickers_sp500 = si.tickers_sp500()
+# show dividends
+print('=> {}\n'.format(msft.dividends))
 
-# all_ticker = tickers_dow
-# all_ticker = list(dict.fromkeys(all_ticker))
+# show splits
+print('=> {}\n'.format(msft.splits))
+
+# show financials
+print('=> {}\n'.format(msft.financials))
+print('=> {}\n'.format(msft.quarterly_financials))
+
+# show major holders
+print('=> {}\n'.format(msft.major_holders))
+
+# show institutional holders
+print('=> {}\n'.format(msft.institutional_holders))
+
+# show balance sheet
+print('=> {}\n'.format(msft.balance_sheet))
+print('=> {}\n'.format(msft.quarterly_balance_sheet))
+
+# show cashflow
+print('=> {}\n'.format(msft.cashflow))
+print('=> {}\n'.format(msft.quarterly_cashflow))
+
+# show earnings
+print('=> {}\n'.format(msft.earnings))
+print('=> {}\n'.format(msft.quarterly_earnings))
+
+# show sustainability
+print('=> {}\n'.format(msft.sustainability))
+
+# show analysts recommendations
+print('=> {}\n'.format(msft.recommendations))
+
+# show next event (earnings, etc)
+print('=> {}\n'.format(msft.calendar))
+
+# show ISIN code - *experimental*
+# ISIN = International Securities Identification Number
+print('=> {}\n'.format(msft.isin))
+
+# show options expirations
+print('=> {}\n'.format(msft.options))
+
+# show news
+print('=> {}\n'.format(msft.news))
+
+# get option chain for specific expiration
+opt = msft.option_chain('2022-04-22')
+# data available via: opt.calls, opt.puts
+
+print('+++++++++++++++++++++++++++++++++')
+print(opt)
+print('+++++++++++++++++++++++++++++++++')
+
+
+# from pandas_datareader import data as pdr
 #
-# all_ticker_error = []
-# all_ticker_data = []
-# all_ticker_dict = {}
+# yf.pdr_override() # <== that's all it takes :-)
 #
-# i = 1
-# import time
-# start_time = time.time()
-# print(tickers_dow)
-#
-
-#
-# #
-# # def add_ticker(ticker):
-# #     ticker_dict = si.get_stats_valuation(ticker)
-# #
-# #     field_ebitda = None
-# #     field_pe = None
-# #     field_peg = None
-# #     field_trailing = None
-# #     for n, field in ticker_dict[0].iteritems():
-# #         if 'EBITDA' in field:
-# #             field_ebitda = n
-# #         elif 'Forward P/E' in field:
-# #             field_forward = n
-# #         elif 'PEG' in field:
-# #             field_peg = n
-# #         elif 'Trailing P/E' in field:
-# #             field_pe = n
-# #
-# #     next_better = bool(float(field_forward) > float(field_pe))
-# #     if next_better:
-# #         ticker_element = {
-# #             'TICKER': ticker,
-# #             'EBITDA': float(0) if math.isnan(float(ticker_dict[1][field_ebitda])) else float(ticker_dict[1][field_ebitda]),
-# #             'PE': float(999) if math.isnan(float(ticker_dict[1][field_pe])) else float(ticker_dict[1][field_pe]),
-# #             'PEG': float(999) if math.isnan(float(ticker_dict[1][field_peg])) else float(ticker_dict[1][field_peg]),
-# #             'PE_NEXT': next_better
-# #         }
-# #         all_ticker_data.append(ticker_element)
-# #         all_ticker_dict[ticker] = ticker_element
-# #
-# # for ticker in all_ticker:
-# #     print('Processo {} ------> {}/{}'.format(ticker, i, len(all_ticker)))
-# #     try:
-# #         add_ticker(ticker)
-# #         i = i+1
-# #         print("--- %s secondi dall'inizio ---" % (time.time() - start_time))
-# #     except:
-# #         print("--- %s secondi dall'inizio ---" % (time.time() - start_time))
-# #         print('\n\nERRORE. {}\n'.format(ticker))
-# #         all_ticker_error.append(ticker)
-# #
-# #
-# # for ticker in all_ticker_error:
-# #     print('Processo {} ------> {}/{}'.format(ticker, i, len(all_ticker)))
-# #     try:
-# #         add_ticker(ticker)
-# #         i = i+1
-# #     except:
-# #         print('\n\nERRORE. {}\n'.format(ticker))
-# #
-# #
-# #
-# # print("\n\n--- %s seconds ---\n\n" % (time.time() - start_time))
-# # print("--- {}/{} -- {} in errore ---\n\n".format(len(all_ticker_dict), len(all_ticker), len(all_ticker_error)))
-# # # print('all_ticker_data: {}'.format(all_ticker_data))
-# # # print('all_ticker_dict: {}'.format(all_ticker_dict))
-# #
-# # sort_ebitda = OrderedDict(sorted(all_ticker_dict.items(), key=lambda x: x[1]['EBITDA'], reverse=True))
-# #
-# #
-# # # FLOW PEG
-# # final_result = OrderedDict(sorted(sort_ebitda.items(), key=lambda x: x[1]['PE'], reverse=False))
-# # sort_peg = OrderedDict(sorted(final_result.items(), key=lambda x: x[1]['PEG'], reverse=False))
-# #
-# # print('\n\n===========================================================\n')
-# # print('================== FLOW PEG\n')
-# # print(sort_peg)
-# # print('\n\n ===========================================================')
-# #
-# # # FLOW PE
-# # sort_peg = OrderedDict(sorted(sort_ebitda.items(), key=lambda x: x[1]['PEG'], reverse=False))
-# # final_result = OrderedDict(sorted(sort_peg.items(), key=lambda x: x[1]['PE'], reverse=False))
-# #
-# # print('\n\n ===========================================================\n')
-# # print('================== FLOW PE\n')
-# # print(final_result)
-# # print('\n\n ===========================================================')
+# print('\n\n')
+# # download dataframe
+# data = pdr.get_data_yahoo("SPY", start="2017-01-01", end="2017-04-30")
+# print('+++++++++++++++++++++++++++++++++')
+# print(data)
+# print('+++++++++++++++++++++++++++++++++')
