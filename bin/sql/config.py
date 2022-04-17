@@ -1,4 +1,5 @@
 import mysql.connector
+from config.credentials import *
 # mydb = mysql.connector.connect(host="127.0.0.1", user="root", password="reventon7", database="intelligent_investor")
 mydb = None
 cursor = None
@@ -16,9 +17,8 @@ class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
 
 class DBIntelligent():
 
-    def __init__(self, name):
-        self.db = name
-        self.mydb = mysql.connector.connect(host="127.0.0.1", user="root", password="reventon7", database=self.db)
+    def __init__(self):
+        self.mydb = mysql.connector.connect(host=SQL_HOST, user=SQL_USER, password=SQL_PASSWORD, database=SQL_DB)
         # self.cursor = self.mydb.cursor(cursor_class=MySQLCursorDict)
         self.cursor = self.mydb.cursor(dictionary=True)
 

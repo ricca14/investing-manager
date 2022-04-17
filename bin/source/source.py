@@ -1,6 +1,5 @@
 from sql.config import DBIntelligent
-sql = DBIntelligent("intelligent_investor")
-
+sql = DBIntelligent()
 
 class StockSource():
 

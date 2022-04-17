@@ -10,7 +10,7 @@ from collections import OrderedDict
 import math
 import time
 from sql.config import DBIntelligent
-sql = DBIntelligent("intelligent_investor")
+sql = DBIntelligent()
 from source.source import StockSource, MarketSource
 
 ticker = {}
