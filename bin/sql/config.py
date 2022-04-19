@@ -5,8 +5,8 @@ mydb = None
 cursor = None
 db = ''
 
-log_query = True
-log_response = True
+log_query = False
+log_response = False
 
 class MySQLCursorDict(mysql.connector.cursor.MySQLCursor):
     def _row_to_python(self, rowdata, desc=None):
@@ -31,9 +31,9 @@ class DBIntelligent():
         # Metodo che logga cose in automatico
         if log_response or log_rage:
             if type(res) == int:
-                print("\nRESPONSE: {}".format(res))
+                print("RESPONSE: {}".format(res))
             else:
-                print("\nRESPONSE: ")
+                print("RESPONSE: ")
                 for x in res:
                     print('{}\n'.format(x))
 
@@ -64,7 +64,7 @@ class DBIntelligent():
             campi=fields,
             items=items
         )
-        self.log_query(q)
+        self.log_query(q, log_rage=log_rage)
         self.cursor.execute(q, val)
         self.mydb.commit()
 
@@ -82,3 +82,34 @@ class DBIntelligent():
             q += f
 
         return q
+
+    def update(self, table, update_list, where_list, log_rage=False):
+        """
+            table: str, tabella da update_stock
+            update: list, ['campo': "nuovo valore"]
+            where: list, ['campo': "campo match"]
+        """
+
+        where_string = ''
+        for where in where_list:
+            for w in where:
+                if where_string:
+                    where_string += ','
+                where_string += "{} = '{}'".format(w, where[w])
+
+
+        update_string = ''
+        for update in update_list:
+            for u in update:
+                if update_string:
+                    update_string += ','
+                update_string += "{} = '{}'".format(u, update[u])
+
+        q = "UPDATE {table} SET {update} WHERE {where}".format(table=table, update=update_string, where=where_string)
+        self.log_query(q, log_rage=log_rage)
+        self.cursor.execute(q)
+        self.mydb.commit()
+
+        response = self.cursor.rowcount
+        self.log_response(response, log_rage=log_rage)
+        return self.cursor.rowcount

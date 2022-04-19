@@ -7,8 +7,12 @@ class StockSource():
         q = "SELECT * FROM stock WHERE sigla = '%s';" % sigla
         return sql.select(q)
 
-    def insert_stock(ticker, id_market):
-        success = sql.insert('stock', ['sigla', 'mercato'], [ticker, id_market])
+    def insert_stock(ticker, name, id_market):
+        success = sql.insert('stock', ['sigla', 'nome', 'mercato'], [ticker, name, id_market])
+        return success
+
+    def update_stock(nome, id_stock):
+        success = sql.update('stock', [{'nome':nome}], [{'id': id_stock}], log_rage=True)
         return success
 
 
