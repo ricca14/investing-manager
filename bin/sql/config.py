@@ -95,15 +95,19 @@ class DBIntelligent():
             for w in where:
                 if where_string:
                     where_string += ','
-                where_string += "{} = '{}'".format(w, where[w])
 
+                where_string += "{} = '{}'".format(w, where[w])
 
         update_string = ''
         for update in update_list:
             for u in update:
                 if update_string:
                     update_string += ','
-                update_string += "{} = '{}'".format(u, update[u])
+
+                if update[u]:
+                    update_string += "{} = '{}'".format(u, update[u])
+                else:
+                    update_string += "{} = NULL".format(u)
 
         q = "UPDATE {table} SET {update} WHERE {where}".format(table=table, update=update_string, where=where_string)
         self.log_query(q, log_rage=log_rage)
