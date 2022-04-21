@@ -11,8 +11,8 @@ class StockSource():
         success = sql.insert('stock', ['sigla', 'nome', 'mercato'], [ticker, name, id_market])
         return success
 
-    def update_stock(nome, id_stock):
-        success = sql.update('stock', [{'nome':nome}], [{'id': id_stock}], log_rage=True)
+    def update_stock(campi, id_stock):
+        success = sql.update('stock', campi, [{'id': id_stock}], log_rage=True)
         return success
 
 

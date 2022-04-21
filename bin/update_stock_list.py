@@ -60,7 +60,9 @@ def insert_stock(ticker, name, market):
 
     print('\n{} -- -- %s secondi\n'.format((time.time() - start_time)))
 
-def get_stock_name(st):
+def get_stock_update_list(st):
+    element = []
+
     stock_info = yf.Ticker(st)
     info = stock_info.info
     stock_name = info.get('shortName', 'x')
@@ -68,8 +70,25 @@ def get_stock_name(st):
         stock_name = stock_name.replace("'", "\\'")
     except:
         stock_name = 'x'
+    element.append({'nome':stock_name})
 
-    return stock_name
+    # Il rendimento dei dividendi: dividendRate
+    # Il rapporto corso/valore contabile: bookValue
+    # EPS: trailingEps, forwardEps
+    # Valutazioni analisti: targetLowPrice, targetMeanPrice, targetHighPrice
+    # Il rendimento del capitale proprio : returnOnEquity
+    key_list = [
+    'bookValue',
+    'targetLowPrice', 'targetMedianPrice', 'targetMeanPrice', 'targetHighPrice',
+    'trailingEps', 'forwardEps',
+    'dividendRate',
+    'currentPrice',
+    'returnOnEquity']
+    for key in key_list:
+        value = info.get(key)
+        element.append({key.lower():value})
+
+    return element
 
 for market in ticker:
     # insert_market(market)
@@ -81,10 +100,9 @@ for market in ticker:
         # insert_stock(stock, stock_name, market)
         try:
             stock = StockSource.get_stock(st)[0]
-            if 'nome' not in stock or not stock['nome']:
-                stock_name = get_stock_name(st)
-                print(st, stock_name, stock)
-                success = StockSource.update_stock(stock_name, stock['id'])
+            update_list = get_stock_update_list(st)
+            print(st, update_list, stock)
+            success = StockSource.update_stock(update_list, stock['id'])
         except Exception as ex:
             print(ex)
 
