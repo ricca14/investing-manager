@@ -15,6 +15,9 @@ class StockSource():
         success = sql.update('stock', campi, [{'id': id_stock}], log_rage=True)
         return success
 
+    def get_all_tickers():
+        q = "SELECT sigla FROM stock;"
+        return sql.select(q)
 
 class MarketSource():
 

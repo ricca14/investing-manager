@@ -15,15 +15,16 @@ session.headers['User-agent'] = 'my-program/1.0'
 
 ticker = {}
 ticker['DWJ'] = si.tickers_dow()
-# ticker['FTSE100'] = si.tickers_ftse100()
-# ticker['FTSE250'] = si.tickers_ftse250()
-# ticker['IBVSPA'] = si.tickers_ibovespa()
+# # ticker['FTSE100'] = si.tickers_ftse100()
+# # ticker['FTSE250'] = si.tickers_ftse250()
+# # ticker['IBVSPA'] = si.tickers_ibovespa()
 ticker['NSDQ'] = si.tickers_nasdaq()
-# ticker['NFT50'] = si.tickers_nifty50()
-# ticker['NFTB'] = si.tickers_niftybank()
-# ticker['OTH'] = si.tickers_other()
+# # ticker['NFT50'] = si.tickers_nifty50()
+# # ticker['NFTB'] = si.tickers_niftybank()
+# # ticker['OTH'] = si.tickers_other()
 ticker['SP500'] = si.tickers_sp500()
 
+# ticker = select_all_ticker()
 print('TICKER TOTAL: {}'.format(ticker))
 
 import time
@@ -99,19 +100,41 @@ def get_stock_update_list(st):
 
     return element
 
+def select_all_ticker():
+    tickers_dict = StockSource.get_all_tickers()
+    t_list = []
+    for el in tickers_dict:
+        t_list.append(el['sigla'])
+    # return
+    return t_list
+
+
+# CON MARKET
 for market in ticker:
     # insert_market(market)
     stock_tickers = ticker[market]
+    # stock_tickers = ticker
     for st in stock_tickers:
         # stock_info = yf.Ticker(stock)
         # info = stock_info.info
         # stock_name = info.get('shortName', '')
         # insert_stock(stock, stock_name, market)
         try:
-            stock = StockSource.get_stock(st)[0]
-            update_list = get_stock_update_list(st)
-            print(st, update_list, stock)
-            success = StockSource.update_stock(update_list, stock['id'])
+            stock = StockSource.get_stock(st)
+            if stock:
+                stock = stock[0]
+                update_list = get_stock_update_list(st)
+                trailingEps = ''
+                for u in update_list:
+                    trailingEps = u['trailingeps'] if 'trailingeps' in u else trailingEps
+
+                if stock['trailingeps'] != trailingEps:
+                    print(st, update_list, stock)
+                    success = StockSource.update_stock(update_list, stock['id'])
+                else:
+                    print('DATI NON MODIFICATI')
+            else:
+                print('\n\n INSERIRE: {} \n\n'.format(st))
         except Exception as ex:
             print(ex)
             traceback.print_exception()

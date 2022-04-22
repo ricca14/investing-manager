@@ -7,7 +7,7 @@ session = requests_cache.CachedSession('yfinance.cache')
 session.headers['User-agent'] = 'my-program/1.0'
 
 
-msft = yf.Ticker("AAF", session=session)
+msft = yf.Ticker("ADSK", session=session)
 a = msft.info
 # get stock info
 
