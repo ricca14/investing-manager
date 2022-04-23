@@ -27,6 +27,8 @@ ticker['SP500'] = si.tickers_sp500()
 # ticker = select_all_ticker()
 print('TICKER TOTAL: {}'.format(ticker))
 
+key_list = ['bookValue','targetLowPrice', 'targetMedianPrice', 'targetMeanPrice', 'targetHighPrice','trailingEps', 'forwardEps','dividendRate','currentPrice','returnOnEquity','pegRatio','revenueGrowth', 'revenueQuarterlyGrowth', 'earningsGrowth', 'earningsQuarterlyGrowth','trailingPE', 'forwardPE']
+
 import time
 start_time = time.time()
 
@@ -85,15 +87,6 @@ def get_stock_update_list(st):
     # Valutazioni analisti: targetLowPrice, targetMeanPrice, targetHighPrice
     # Il rendimento del capitale proprio : returnOnEquity
     # La crescita dell’utile: pegRatio
-    key_list = [
-    'bookValue',
-    'targetLowPrice', 'targetMedianPrice', 'targetMeanPrice', 'targetHighPrice',
-    'trailingEps', 'forwardEps',
-    'dividendRate',
-    'currentPrice',
-    'returnOnEquity',
-    'pegRatio',
-    'revenueGrowth', 'revenueQuarterlyGrowth', 'earningsGrowth', 'earningsQuarterlyGrowth']
     for key in key_list:
         value = info.get(key, '') if key in info and info[key] else ''
         element.append({key.lower():value})
@@ -111,15 +104,14 @@ def select_all_ticker():
 
 # CON MARKET
 for market in ticker:
-    # insert_market(market)
+    insert_market(market)
     stock_tickers = ticker[market]
-    # stock_tickers = ticker
     for st in stock_tickers:
-        # stock_info = yf.Ticker(stock)
-        # info = stock_info.info
-        # stock_name = info.get('shortName', '')
-        # insert_stock(stock, stock_name, market)
         try:
+            stock = StockSource.get_stock(st)
+            if not stock:
+                insert_stock(stock, ST, market)
+
             stock = StockSource.get_stock(st)
             if stock:
                 stock = stock[0]
@@ -134,7 +126,7 @@ for market in ticker:
                 else:
                     print('DATI NON MODIFICATI')
             else:
-                print('\n\n INSERIRE: {} \n\n'.format(st))
+                print('\n\n INSERIRE MANUALMENTE: {} \n\n'.format(st))
         except Exception as ex:
             print(ex)
             traceback.print_exception()
