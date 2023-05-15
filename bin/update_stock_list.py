@@ -221,8 +221,7 @@ def main(stock_tickers):
                     trailingeps_now = [upd['trailingeps'] for upd in update_list if 'trailingeps' in upd][0]
                     trailingEps = trailing_eps_stock.get(sigla, 0)
 
-                    print('VS: {} = {}'.format(trailingeps_now, trailingEps))
-                    
+                    # print('VS: {} = {}'.format(trailingeps_now, trailingEps))
                     if trailingeps_now != trailingEps:
                         success = StockSource.update_stock(update_list, match_stock_id[sigla])
                         print('{}: AGGIORNATO'.format(sigla))
