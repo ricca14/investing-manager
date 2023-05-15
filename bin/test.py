@@ -1,3 +1,7 @@
 import yfinance as yf
-msft = yf.Ticker("MSFT")
-print(msft.info)
+tickers = yf.Tickers('MSFT AAPL GOOG')
+print(tickers.tickers['MSFT'].info)
+
+
+tickers = yf.Ticker('MSFT')
+print(tickers.info)

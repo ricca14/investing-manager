@@ -4,33 +4,40 @@ from sql.config import DBIntelligent
 sql = DBIntelligent()
 from source.source import StockSource, MarketSource
 
-import yahoo_fin.stock_info as si
 import yfinance as yf
-from pandas_datareader import data as pdr
 yf.pdr_override()
 
 import requests_cache
 session = requests_cache.CachedSession('yfinance.cache')
 session.headers['User-agent'] = 'my-program/1.0'
 
-ticker = {}
-ticker['DWJ'] = si.tickers_dow()
+# #######################
+search_new_ticker = False
+if not search_new_ticker:
+    import yahoo_fin.stock_info as si
+    ticker = {}
+    ticker['DWJ'] = si.tickers_dow()
+    ticker['NSDQ'] = si.tickers_nasdaq()
+    ticker['SP500'] = si.tickers_sp500()
+
 # # ticker['FTSE100'] = si.tickers_ftse100()
 # # ticker['FTSE250'] = si.tickers_ftse250()
 # # ticker['IBVSPA'] = si.tickers_ibovespa()
-ticker['NSDQ'] = si.tickers_nasdaq()
 # # ticker['NFT50'] = si.tickers_nifty50()
 # # ticker['NFTB'] = si.tickers_niftybank()
 # # ticker['OTH'] = si.tickers_other()
-ticker['SP500'] = si.tickers_sp500()
 
 # ticker = select_all_ticker()
-print('TICKER TOTAL: {}'.format(ticker))
+# print('TICKER TOTAL: {}'.format(ticker))
 
 key_list = ['bookValue','targetLowPrice', 'targetMedianPrice', 'targetMeanPrice', 'targetHighPrice','trailingEps', 'forwardEps','dividendRate','currentPrice','returnOnEquity','pegRatio','revenueGrowth', 'revenueQuarterlyGrowth', 'earningsGrowth', 'earningsQuarterlyGrowth','trailingPE', 'forwardPE']
 
 import time
 start_time = time.time()
+
+# ##########################
+# METODI DI RACCORDO
+# ##########################
 
 def insert_market(sigla):
     r = MarketSource.get_market(sigla)
@@ -39,59 +46,79 @@ def insert_market(sigla):
         print('{} record inserito\n'.format(success))
 
 def insert_stock(ticker, name, market):
-    r = MarketSource.get_market(market)
-    if not r:
-        print('\nERRORE: {} non trovato\n'.format(market))
-
+    print(ticker, name, market)
+    print('----------------------')
     try:
-        market = r[0];
+        r = MarketSource.get_market(market)
+        if not r:
+            print('\nERRORE: {} non trovato\n'.format(market))
+
+        try:
+            market = r[0];
+        except Exception as ex:
+            print(ex)
+
+        stock = StockSource.get_stock(ticker)
+        try:
+            stock = stock[0]
+        except Exception as ex:
+            print(ex)
+
+        if not stock:
+            success = StockSource.insert_stock(ticker, name, market['id'])
+            print('\n{} record inserito\n'.format(success))
+        elif 'nome' not in stock or not stock['nome']:
+            print(ticker, name, stock)
+            success = StockSource.update_stock(name, stock['id'])
+            print('\n{} record inserito\n'.format(success))
+        else:
+            print('\nNO {} -- -- %s secondi'.format((time.time() - start_time)))
+
+        print('\n{} -- -- %s secondi\n'.format((time.time() - start_time)))
+    
     except Exception as ex:
+        traceback.print_exception()
         print(ex)
 
-    stock = StockSource.get_stock(ticker)
-    try:
-        stock = stock[0]
-    except Exception as ex:
-        print(ex)
 
-    if not stock:
-        success = StockSource.insert_stock(ticker, name, market['id'])
-        print('\n{} record inserito\n'.format(success))
-    elif 'nome' not in stock or not stock['nome']:
-        print(ticker, name, stock)
-        success = StockSource.update_stock(name, stock['id'])
-        print('\n{} record inserito\n'.format(success))
-    else:
-        print('\nNO {} -- -- %s secondi'.format((time.time() - start_time)))
 
-    print('\n{} -- -- %s secondi\n'.format((time.time() - start_time)))
+def get_stock_update_list(st_list):
+    # Faccio la GET della lista di Ticker
+    stock_info = yf.Tickers(st_list)
 
-def get_stock_update_list(st):
-    element = []
+    list_element = []
+    list_tck = list(filter(None, st_list.split(' ')))
+    # print('stock_info {}'.format(stock_info))
+    for tck in list_tck:
+        try:
+            element = []        
+            info = stock_info.tickers[tck].info
+            stock_name = info.get('shortName', '')
+            try:
+                stock_name = stock_name.replace("'", "\\'")
+            except:
+                stock_name = ''
+            element.append({'nome':stock_name})
+            element.append({'sigla':tck})
+            
+            # Il rendimento dei dividendi: dividendRate
+            # Il rapporto corso/valore contabile: bookValue
+            # EPS: trailingEps, forwardEps
+            # Valutazioni analisti: targetLowPrice, targetMeanPrice, targetHighPrice
+            # Il rendimento del capitale proprio : returnOnEquity
+            # La crescita dell’utile: pegRatio
+            for key in key_list:
+                value = info.get(key, '') if key in info and info[key] else ''
+                element.append({key.lower():value})
 
-    stock_info = yf.Ticker(st)
-    info = stock_info.info
+            list_element.append(element)
+        except:
+            print('IMPOSSIBILE RECUPERARE: {}'.format(tck))
 
-    # print('\n info: {}'.format(info));
+    # print('\n list_element: {}'.format(list_element))
+    return list_element
 
-    stock_name = info.get('shortName', '')
-    try:
-        stock_name = stock_name.replace("'", "\\'")
-    except:
-        stock_name = ''
-    element.append({'nome':stock_name})
 
-    # Il rendimento dei dividendi: dividendRate
-    # Il rapporto corso/valore contabile: bookValue
-    # EPS: trailingEps, forwardEps
-    # Valutazioni analisti: targetLowPrice, targetMeanPrice, targetHighPrice
-    # Il rendimento del capitale proprio : returnOnEquity
-    # La crescita dell’utile: pegRatio
-    for key in key_list:
-        value = info.get(key, '') if key in info and info[key] else ''
-        element.append({key.lower():value})
-
-    return element
 
 def select_all_ticker():
     tickers_dict = StockSource.get_all_tickers()
@@ -102,37 +129,123 @@ def select_all_ticker():
     return t_list
 
 
-# CON MARKET
-for market in ticker:
-    insert_market(market)
-    stock_tickers = ticker[market]
-    print(stock_tickers)
+def get_ticket_query(stock_tickers):
+    match_stock_id = {}
+    trailing_eps_stock = {}
+    list_ticker_getter = []
+    list_ticker_getter_str = ''
+    i = 0
     for st in stock_tickers:
+        if i == 5:
+            i = 0
+            list_ticker_getter.append(list_ticker_getter_str)
+            list_ticker_getter_str = ''
+
         try:
+            # print('CERCO: {}'.format(st))
             stock = StockSource.get_stock(st)
             if not stock:
-                insert_stock(stock, st, market)
-                stock = StockSource.get_stock(st)
-
-            print(stock)
-            if stock:
-                print(st)
-                update_list = get_stock_update_list(st)
-
-                print(update_list)
-                trailingEps = ''
-                for u in update_list:
-                    trailingEps = u['trailingeps'] if 'trailingeps' in u else trailingEps
-
-                if stock['trailingeps'] != trailingEps:
-                    print(st, update_list, stock)
-                    success = StockSource.update_stock(update_list, stock['id'])
-                else:
-                    print('DATI NON MODIFICATI')
+                insert_stock(st, st, market)
+                stock = StockSource.get_stock(st)[0]
             else:
-                print('\n\n INSERIRE MANUALMENTE: {} \n\n'.format(st))
+                stock = stock[0]
+
+            match_stock_id[st] = stock['id']
+            trailing_eps_stock[st] = stock['trailingeps']
+            list_ticker_getter_str += ' {}'.format(st)
+            i += 1
         except Exception as ex:
             print(ex)
-            # traceback.print_exception()
+            traceback.print_exception()
 
-print("\n--- %s secondi dall'inizio ---" % (time.time() - start_time))
+    if i < 5:
+        list_ticker_getter.append(list_ticker_getter_str)
+    
+    return list_ticker_getter, match_stock_id, trailing_eps_stock
+
+
+
+# ##########################
+# METODI PRINCIPALI
+# ##########################
+
+def start_ASCII():
+    print("""
+            _.---.__
+          .'        `-.
+         /      .--.   |
+         \/  / /    |_/
+          `\/|/    _(_)
+      ___  /|_.--'    `.   .
+       \  `--' .---.     \ /|
+        )   `       \     //|
+        | __    __   |   '/||
+        |/  \  /  \      / ||
+        ||  |  |   \     \  |
+        \|  |  |   /        |
+       __\\@/  |@ | ___ \--'
+      (     /' `--'  __)|
+     __>   (  .  .--' &"\
+    /   `--|_/--'     &  |
+    |                 #. |
+    |                 q# |
+     \              ,ad#'
+      `.________.ad####'
+        `#####""""""''
+         `&#"
+          &# 
+          "&
+          """)
+
+def handle():   
+    stock_tickers = []
+    if search_new_ticker:
+        # CON MARKET
+        for market in ticker:
+            insert_market(market)
+            stock_tickers = stock_tickers + ticker[market]
+    else:
+        stock_tickers = StockSource.get_stock_ticker()
+
+    main(stock_tickers)
+
+def main(stock_tickers):
+        list_ticker_getter, match_stock_id, trailing_eps_stock = get_ticket_query(stock_tickers)
+        for list_tck in list_ticker_getter:
+            start_time_list = time.time()
+            list_tickers = get_stock_update_list(list_tck)
+            try:
+                for update_list in list_tickers:
+                    # print('update_list: {}'.format(update_list))
+                    sigla = [upd['sigla'] for upd in update_list if 'sigla' in upd][0]
+                    trailingeps_now = [upd['trailingeps'] for upd in update_list if 'trailingeps' in upd][0]
+                    trailingEps = trailing_eps_stock.get(sigla, 0)
+
+                    print('VS: {} = {}'.format(trailingeps_now, trailingEps))
+                    
+                    if trailingeps_now != trailingEps:
+                        success = StockSource.update_stock(update_list, match_stock_id[sigla])
+                        print('{}: AGGIORNATO'.format(sigla))
+                    else:
+                        print('{}: DATI NON MODIFICATI'.format(sigla))
+            
+                
+                print( "\n--- {} secondi per la lista ---\n".format(time.time() - start_time_list))
+            except Exception as ex:
+                print(ex)
+                traceback.print_exception()
+
+
+# ##########################
+# TUTTO INIZIA DALLA FINE
+# ##########################
+
+start_ASCII()
+handle()
+print("\n--- {} secondi dall'inizio ---".format(time.time() - start_time))
+
+
+
+
+
+
