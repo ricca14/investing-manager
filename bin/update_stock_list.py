@@ -1,4 +1,5 @@
 import time
+from datetime import datetime, date
 import traceback
 from sql.config import DBIntelligent
 sql = DBIntelligent()
@@ -12,7 +13,9 @@ session = requests_cache.CachedSession('yfinance.cache')
 session.headers['User-agent'] = 'my-program/1.0'
 
 # #######################
+skip_today = True
 search_new_ticker = False
+n_ticker = 10
 if not search_new_ticker:
     import yahoo_fin.stock_info as si
     ticker = {}
@@ -132,11 +135,12 @@ def select_all_ticker():
 def get_ticket_query(stock_tickers):
     match_stock_id = {}
     trailing_eps_stock = {}
+    update_today = {}
     list_ticker_getter = []
     list_ticker_getter_str = ''
     i = 0
     for st in stock_tickers:
-        if i == 5:
+        if i == n_ticker:
             i = 0
             list_ticker_getter.append(list_ticker_getter_str)
             list_ticker_getter_str = ''
@@ -152,6 +156,7 @@ def get_ticket_query(stock_tickers):
 
             match_stock_id[st] = stock['id']
             trailing_eps_stock[st] = stock['trailingeps']
+            update_today[st] = its_update_today(stock['upd_datetime'])
             list_ticker_getter_str += ' {}'.format(st)
             i += 1
         except Exception as ex:
@@ -161,7 +166,12 @@ def get_ticket_query(stock_tickers):
     if i < 5:
         list_ticker_getter.append(list_ticker_getter_str)
     
-    return list_ticker_getter, match_stock_id, trailing_eps_stock
+    return list_ticker_getter, match_stock_id, trailing_eps_stock, update_today
+
+
+def its_update_today(upd_datetime):
+    today = datetime.now()
+    return (abs((today - upd_datetime).days) == 0)
 
 
 
@@ -205,34 +215,47 @@ def handle():
             insert_market(market)
             stock_tickers = stock_tickers + ticker[market]
     else:
-        stock_tickers = StockSource.get_stock_ticker()
+        stock_tickers = StockSource.get_stock_ticker_to_update(date.today())
 
     main(stock_tickers)
 
 def main(stock_tickers):
-        list_ticker_getter, match_stock_id, trailing_eps_stock = get_ticket_query(stock_tickers)
-        for list_tck in list_ticker_getter:
-            start_time_list = time.time()
-            list_tickers = get_stock_update_list(list_tck)
-            try:
-                for update_list in list_tickers:
-                    # print('update_list: {}'.format(update_list))
-                    sigla = [upd['sigla'] for upd in update_list if 'sigla' in upd][0]
+    list_ticker_getter, match_stock_id, trailing_eps_stock, update_today = get_ticket_query(stock_tickers)
+    c = 0
+    for list_tck in list_ticker_getter:
+        start_time_list = time.time()
+        list_tickers = get_stock_update_list(list_tck)
+
+        # Se non riesce a fare la get dei ticker allinea i contatori
+        if len(list_tickers) != n_ticker:
+            c += n_ticker - len(list_tickers)
+
+        try:
+            for update_list in list_tickers:
+                # print('update_list: {}'.format(update_list))
+                sigla = [upd['sigla'] for upd in update_list if 'sigla' in upd][0]
+                if not update_today[sigla] and skip_today:
                     trailingeps_now = [upd['trailingeps'] for upd in update_list if 'trailingeps' in upd][0]
                     trailingEps = trailing_eps_stock.get(sigla, 0)
 
                     # print('VS: {} = {}'.format(trailingeps_now, trailingEps))
-                    if trailingeps_now != trailingEps:
+                    if trailingeps_now and trailingeps_now != trailingEps:
                         success = StockSource.update_stock(update_list, match_stock_id[sigla])
                         print('{}: AGGIORNATO'.format(sigla))
                     else:
                         print('{}: DATI NON MODIFICATI'.format(sigla))
-            
-                
-                print( "\n--- {} secondi per la lista ---\n".format(time.time() - start_time_list))
-            except Exception as ex:
-                print(ex)
-                traceback.print_exception()
+                else:
+                    print('{}: AGGIORNATO OGGI'.format(sigla))
+
+                c += 1 
+
+            sec = (time.time()-start_time_list)
+            perc = (c*100)/len(stock_tickers)
+            print("\n--- {} secondi | lista {}/{} ({}%) ---\n".format(sec, c, len(stock_tickers), round(perc, 2)))
+                    
+        except Exception as ex:
+            print(ex)
+            traceback.print_exception()
 
 
 # ##########################

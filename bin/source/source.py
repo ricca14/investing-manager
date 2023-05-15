@@ -12,6 +12,11 @@ class StockSource():
         ticker = sql.select(q)
         return [t['sigla'] for t in ticker]
 
+    def get_stock_ticker_to_update(data):
+        q = "SELECT sigla FROM stock WHERE upd_datetime < '{}';".format(data)
+        ticker = sql.select(q)
+        return [t['sigla'] for t in ticker]
+    
 
     def insert_stock(ticker, name, id_market):
         success = sql.insert('stock', ['sigla', 'nome', 'mercato'], [ticker, name, id_market])
