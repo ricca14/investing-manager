@@ -4,8 +4,8 @@ sql = DBIntelligent()
 class StockSource():
 
     def get_stock(sigla):
-        q = "SELECT * FROM stock WHERE sigla = '%s';" % sigla
-        return sql.select(q)
+        q = "SELECT * FROM stock WHERE sigla = '%s' LIMIT 1;" % sigla
+        return sql.select(q)[0]
 
     def insert_stock(ticker, name, id_market):
         success = sql.insert('stock', ['sigla', 'nome', 'mercato'], [ticker, name, id_market])

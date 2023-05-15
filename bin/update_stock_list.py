@@ -106,16 +106,20 @@ def select_all_ticker():
 for market in ticker:
     insert_market(market)
     stock_tickers = ticker[market]
+    print(stock_tickers)
     for st in stock_tickers:
         try:
             stock = StockSource.get_stock(st)
             if not stock:
-                insert_stock(stock, ST, market)
+                insert_stock(stock, st, market)
+                stock = StockSource.get_stock(st)
 
-            stock = StockSource.get_stock(st)
+            print(stock)
             if stock:
-                stock = stock[0]
+                print(st)
                 update_list = get_stock_update_list(st)
+
+                print(update_list)
                 trailingEps = ''
                 for u in update_list:
                     trailingEps = u['trailingeps'] if 'trailingeps' in u else trailingEps
@@ -129,6 +133,6 @@ for market in ticker:
                 print('\n\n INSERIRE MANUALMENTE: {} \n\n'.format(st))
         except Exception as ex:
             print(ex)
-            traceback.print_exception()
+            # traceback.print_exception()
 
 print("\n--- %s secondi dall'inizio ---" % (time.time() - start_time))
