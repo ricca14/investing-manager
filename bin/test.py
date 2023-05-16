@@ -5,7 +5,6 @@
 
 # tickers = yf.Ticker('MSFT')
 # print(tickers.info)
-from datetime import date
-
-today = date.today()
-print("Today's date:", today)
+from service.parametri import ParametriService
+a = ParametriService.get_parametri('update_stock')
+print(a)

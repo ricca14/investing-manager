@@ -1,12 +1,13 @@
-import time
 from datetime import datetime, date
 import traceback
 from sql.config import DBIntelligent
 sql = DBIntelligent()
-from source.source import StockSource, MarketSource
+
+from service.stock import StockService
+from service.parametri import ParametriService
 
 import yfinance as yf
-yf.pdr_override()
+# yf.pdr_override()
 
 import requests_cache
 session = requests_cache.CachedSession('yfinance.cache')
@@ -42,96 +43,6 @@ start_time = time.time()
 # METODI DI RACCORDO
 # ##########################
 
-def insert_market(sigla):
-    r = MarketSource.get_market(sigla)
-    if not r:
-        success = MarketSource.insert_market(sigla)
-        print('{} record inserito\n'.format(success))
-
-def insert_stock(ticker, name, market):
-    print(ticker, name, market)
-    print('----------------------')
-    try:
-        r = MarketSource.get_market(market)
-        if not r:
-            print('\nERRORE: {} non trovato\n'.format(market))
-
-        try:
-            market = r[0];
-        except Exception as ex:
-            print(ex)
-
-        stock = StockSource.get_stock(ticker)
-        try:
-            stock = stock[0]
-        except Exception as ex:
-            print(ex)
-
-        if not stock:
-            success = StockSource.insert_stock(ticker, name, market['id'])
-            print('\n{} record inserito\n'.format(success))
-        elif 'nome' not in stock or not stock['nome']:
-            print(ticker, name, stock)
-            success = StockSource.update_stock(name, stock['id'])
-            print('\n{} record inserito\n'.format(success))
-        else:
-            print('\nNO {} -- -- %s secondi'.format((time.time() - start_time)))
-
-        print('\n{} -- -- %s secondi\n'.format((time.time() - start_time)))
-    
-    except Exception as ex:
-        traceback.print_exception()
-        print(ex)
-
-
-
-def get_stock_update_list(st_list):
-    # Faccio la GET della lista di Ticker
-    stock_info = yf.Tickers(st_list)
-
-    list_element = []
-    list_tck = list(filter(None, st_list.split(' ')))
-    # print('stock_info {}'.format(stock_info))
-    for tck in list_tck:
-        try:
-            element = []        
-            info = stock_info.tickers[tck].info
-            stock_name = info.get('shortName', '')
-            try:
-                stock_name = stock_name.replace("'", "\\'")
-            except:
-                stock_name = ''
-            element.append({'nome':stock_name})
-            element.append({'sigla':tck})
-            
-            # Il rendimento dei dividendi: dividendRate
-            # Il rapporto corso/valore contabile: bookValue
-            # EPS: trailingEps, forwardEps
-            # Valutazioni analisti: targetLowPrice, targetMeanPrice, targetHighPrice
-            # Il rendimento del capitale proprio : returnOnEquity
-            # La crescita dell’utile: pegRatio
-            for key in key_list:
-                value = info.get(key, '') if key in info and info[key] else ''
-                element.append({key.lower():value})
-
-            list_element.append(element)
-        except:
-            print('IMPOSSIBILE RECUPERARE: {}'.format(tck))
-
-    # print('\n list_element: {}'.format(list_element))
-    return list_element
-
-
-
-def select_all_ticker():
-    tickers_dict = StockSource.get_all_tickers()
-    t_list = []
-    for el in tickers_dict:
-        t_list.append(el['sigla'])
-    # return
-    return t_list
-
-
 def get_ticket_query(stock_tickers):
     match_stock_id = {}
     trailing_eps_stock = {}
@@ -147,10 +58,10 @@ def get_ticket_query(stock_tickers):
 
         try:
             # print('CERCO: {}'.format(st))
-            stock = StockSource.get_stock(st)
+            stock = StockService.get_stock(st)
             if not stock:
-                insert_stock(st, st, market)
-                stock = StockSource.get_stock(st)[0]
+                StockService.insert_stock(st, st, market)
+                stock = StockService.get_stock(st)[0]
             else:
                 stock = stock[0]
 
@@ -224,7 +135,7 @@ def main(stock_tickers):
     c = 0
     for list_tck in list_ticker_getter:
         start_time_list = time.time()
-        list_tickers = get_stock_update_list(list_tck)
+        list_tickers = StockService.get_stock_update_list(list_tck)
 
         # Se non riesce a fare la get dei ticker allinea i contatori
         if len(list_tickers) != n_ticker:
