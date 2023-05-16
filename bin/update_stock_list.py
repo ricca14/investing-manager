@@ -163,7 +163,7 @@ def get_ticket_query(stock_tickers):
             print(ex)
             traceback.print_exception()
 
-    if i < 5:
+    if i < n_ticker:
         list_ticker_getter.append(list_ticker_getter_str)
     
     return list_ticker_getter, match_stock_id, trailing_eps_stock, update_today

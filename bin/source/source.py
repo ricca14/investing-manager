@@ -13,7 +13,8 @@ class StockSource():
         return [t['sigla'] for t in ticker]
 
     def get_stock_ticker_to_update(data):
-        q = "SELECT sigla FROM stock WHERE upd_datetime < '{}';".format(data)
+        q = "SELECT sigla FROM stock WHERE upd_datetime < '{}' AND bookvalue IS NOT NULL;".format(
+            data)
         ticker = sql.select(q)
         return [t['sigla'] for t in ticker]
     
